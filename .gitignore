@@ -1,0 +1,13 @@
+.env
+.claude/
+ignore/
+
+.venv/ 
+__pycache__/
+
+mcp.json
+
+#AI
+CLAUDE.md
+AGENTS.md
+.claude/
