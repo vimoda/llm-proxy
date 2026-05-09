@@ -41,4 +41,5 @@ async def list_models() -> list[ModelInfo]:
         return models
 
     results = await asyncio.gather(*[_fetch(name, p) for name, p in _REGISTRY.items()])
-    return [m for sublist in results for m in sublist]
+    all_models = [m for sublist in results for m in sublist]
+    return sorted(all_models, key=lambda m: m.id.lower())

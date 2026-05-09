@@ -26,7 +26,7 @@ async def get_provider_models(provider_name: str) -> ModelListResponse:
     except ValueError:
         raise HTTPException(status_code=404, detail=f"Provider '{provider_name}' not found.")
     models = await provider.list_models()
-    return ModelListResponse(data=models)
+    return ModelListResponse(data=sorted(models, key=lambda m: m.id.lower()))
 
 # Endpoint para chat completions (sin streaming)
 @router.post("/chat/completions", response_model=ChatCompletionResponse)
