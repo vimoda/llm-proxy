@@ -12,7 +12,6 @@ Usage:
 import argparse
 import asyncio
 import os
-from re import A
 import readline  # noqa: F401 — enables input history/editing
 import sys
 
@@ -110,17 +109,58 @@ def _stream_and_capture(
     if max_tokens is not None:
         kwargs["max_tokens"] = max_tokens
 
-    console.print("\n[bold cyan]Assistant[/bold cyan]\n")
-    full_text = ""
     stream = _client().chat.completions.create(**kwargs)
-    for chunk in stream:
-        if not chunk.choices:
-            continue
-        delta = chunk.choices[0].delta.content or ""
-        if delta:
-            print(delta, end="", flush=True)
-            full_text += delta
-    print()
+    full_text = ""
+    reasoning_text = ""
+    header_shown = False
+    reasoning_label_shown = False
+    content_started = False
+    status = console.status("[dim]Assistant is thinking…[/dim]", spinner="dots")
+    status.start()
+    thinking = True
+
+    def _stop_thinking() -> None:
+        nonlocal thinking
+        if thinking:
+            status.stop()
+            thinking = False
+
+    def _ensure_header() -> None:
+        nonlocal header_shown
+        _stop_thinking()
+        if not header_shown:
+            console.print("\n[bold cyan]Assistant[/bold cyan]\n")
+            header_shown = True
+
+    try:
+        for chunk in stream:
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta
+            d_reason = getattr(delta, "reasoning_content", None) or ""
+            d_content = delta.content or ""
+
+            if d_reason:
+                _ensure_header()
+                if not reasoning_label_shown:
+                    console.print("[dim italic]Reasoning[/dim italic]\n", end="")
+                    reasoning_label_shown = True
+                console.print(d_reason, end="", style="dim", markup=False)
+                reasoning_text += d_reason
+
+            if d_content:
+                _ensure_header()
+                if reasoning_label_shown and not content_started:
+                    console.print()
+                    content_started = True
+                print(d_content, end="", flush=True)
+                full_text += d_content
+                content_started = True
+    finally:
+        _stop_thinking()
+
+    if header_shown or full_text or reasoning_text:
+        console.print()
     return full_text
 
 
