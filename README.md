@@ -13,7 +13,11 @@ OpenAI-compatible HTTP proxy that routes requests to multiple LLM providers. Dro
 
 ## Quick start
 
+Use a virtual environment in the repo (for example `.venv`) so dependencies stay isolated:
+
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env  # add your API keys
 python main.py
