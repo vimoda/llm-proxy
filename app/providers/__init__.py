@@ -5,13 +5,15 @@ from app.providers.base import BaseProvider
 # from app.providers.openai_provider import OpenAIProvider
 # from app.providers.anthropic_provider import AnthropicProvider
 from app.providers.groq_provider import GroqAIProvider
+from app.providers.openai_provider import OpenAIProvider
 from app.providers.openrouter_provider import OpenRouterAIProvider
+from app.providers.anthropic_provider import AnthropicProvider
 from app.providers.ollama_provider import OllamaAIProvider
 from app.providers.nvidia_provider import NvidiaProvider
 
 _REGISTRY: dict[str, BaseProvider] = {
-    # "openai": OpenAIProvider(),
-    # "anthropic": AnthropicProvider(),
+    "openai": OpenAIProvider(),
+    "anthropic": AnthropicProvider(),
     "openrouter": OpenRouterAIProvider(),
     "ollama": OllamaAIProvider(),
     "groq": GroqAIProvider(),

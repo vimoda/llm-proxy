@@ -14,7 +14,8 @@
         "T1_PASSWORD": "${T1_PASSWORD}",
         "T1_ENV": "${T1_ENV}",
         "T1_SHOP_ID": "${T1_SHOP_ID}",
-        "T1_COMERCE_ID": "${T1_COMERCE_ID}"
+        "T1_COMERCE_ID": "${T1_COMERCE_ID}",
+        "T1_LOG_LEVEL": "DEBUG"
       } 
     }
   }

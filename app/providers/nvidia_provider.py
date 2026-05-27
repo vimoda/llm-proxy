@@ -5,6 +5,7 @@ import httpx
 from app.config import settings
 from app.models import ChatCompletionRequest, ChatCompletionResponse, ModelInfo
 from app.providers.base import BaseProvider
+from app.upstream import check_response, error_sse, UpstreamError
 
 BASE_URL = "https://integrate.api.nvidia.com/v1"
 
@@ -40,7 +41,7 @@ class NvidiaProvider(BaseProvider):
                 json=self._payload(request, model),
                 timeout=60.0,
             )
-            response.raise_for_status()
+            await check_response(response)
             return ChatCompletionResponse.model_validate(response.json())
 
     async def stream(  # type: ignore[override]
@@ -49,14 +50,17 @@ class NvidiaProvider(BaseProvider):
         payload = self._payload(request, model)
         payload["stream"] = True
         async with httpx.AsyncClient() as client:
-            async with client.stream(
-                "POST",
-                f"{BASE_URL}/chat/completions",
-                headers=self._headers(),
-                json=payload,
-                timeout=60.0,
-            ) as response:
-                response.raise_for_status()
-                async for line in response.aiter_lines():
-                    if line.startswith("data: "):
-                        yield f"{line}\n\n"
+            try:
+                async with client.stream(
+                    "POST",
+                    f"{BASE_URL}/chat/completions",
+                    headers=self._headers(),
+                    json=payload,
+                    timeout=60.0,
+                ) as response:
+                    await check_response(response)
+                    async for line in response.aiter_lines():
+                        if line.startswith("data: "):
+                            yield f"{line}\n\n"
+            except UpstreamError as e:
+                yield error_sse(e.status_code, str(e), e.body)

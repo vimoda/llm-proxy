@@ -12,6 +12,7 @@ from app.models import (
     ModelPricing,
 )
 from app.providers.base import BaseProvider
+from app.upstream import check_response, error_sse, UpstreamError
 
 
 class _ORArchitecture(TypedDict, total=False):
@@ -92,9 +93,7 @@ class OpenRouterAIProvider(BaseProvider):
                 timeout=60.0,
             )
 
-            # Imprimir estatus de la respuesta para depuración
-            print(f"OpenRouter response status: {response.status_code}")
-            response.raise_for_status()
+            await check_response(response)
             # Guardar la respuesta completa en un archivo para depuración
             # with open("openrouter_response.json", "w") as f:
             #     json.dump(response.json(), f, indent=2)
@@ -107,18 +106,20 @@ class OpenRouterAIProvider(BaseProvider):
         payload = self._payload(request, model)
         payload["stream"] = True
         async with httpx.AsyncClient() as client:
-            async with client.stream(
-                "POST",
-                f"{BASE_URL}/chat/completions",
-                headers=self._headers(),
-                json=payload,
-                timeout=60.0,
-            ) as response:
-                response.raise_for_status()
-                async for line in response.aiter_lines():
-                    print(f"OpenRouter stream line: {line}")  # Debug: print each line received
-                    if line.startswith("data: "):
-                        yield f"{line}\n\n"
+            try:
+                async with client.stream(
+                    "POST",
+                    f"{BASE_URL}/chat/completions",
+                    headers=self._headers(),
+                    json=payload,
+                    timeout=60.0,
+                ) as response:
+                    await check_response(response)
+                    async for line in response.aiter_lines():
+                        if line.startswith("data: "):
+                            yield f"{line}\n\n"
+            except UpstreamError as e:
+                yield error_sse(e.status_code, str(e), e.body)
 
     async def list_models(self) -> list[ModelInfo]:
         async with httpx.AsyncClient() as client:
