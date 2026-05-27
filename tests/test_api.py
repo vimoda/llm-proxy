@@ -14,13 +14,13 @@ from tests.conftest import BASE_REQUEST, OPENAI_RESPONSE, ANTHROPIC_RESPONSE
 def test_missing_provider_separator(client):
     resp = client.post("/v1/chat/completions", json={**BASE_REQUEST, "model": "gpt-4o"})
     assert resp.status_code == 400
-    assert "provider/model" in resp.json()["detail"]
+    assert "provider/model" in resp.json()["error"]["message"]
 
 
 def test_unknown_provider(client):
     resp = client.post("/v1/chat/completions", json={**BASE_REQUEST, "model": "unknown/model"})
     assert resp.status_code == 400
-    assert "unknown" in resp.json()["detail"].lower()
+    assert "unknown" in resp.json()["error"]["message"].lower()
 
 
 def test_invalid_role(client):
@@ -42,10 +42,15 @@ def test_empty_messages(client):
 # OpenAI — complete
 # ---------------------------------------------------------------------------
 
+def _ok_response(data: dict) -> MagicMock:
+    m = MagicMock()
+    m.json.return_value = data
+    m.is_error = False
+    return m
+
+
 def test_openai_complete(client):
-    mock_response = MagicMock()
-    mock_response.json.return_value = OPENAI_RESPONSE
-    mock_response.raise_for_status = MagicMock()
+    mock_response = _ok_response(OPENAI_RESPONSE)
 
     with patch(
         "app.providers.openai_provider.httpx.AsyncClient.post",
@@ -61,9 +66,7 @@ def test_openai_complete(client):
 
 
 def test_openai_passes_temperature_and_max_tokens(client):
-    mock_response = MagicMock()
-    mock_response.json.return_value = OPENAI_RESPONSE
-    mock_response.raise_for_status = MagicMock()
+    mock_response = _ok_response(OPENAI_RESPONSE)
 
     with patch(
         "app.providers.openai_provider.httpx.AsyncClient.post",
@@ -81,9 +84,7 @@ def test_openai_passes_temperature_and_max_tokens(client):
 
 
 def test_openai_omits_optional_fields_when_none(client):
-    mock_response = MagicMock()
-    mock_response.json.return_value = OPENAI_RESPONSE
-    mock_response.raise_for_status = MagicMock()
+    mock_response = _ok_response(OPENAI_RESPONSE)
 
     with patch(
         "app.providers.openai_provider.httpx.AsyncClient.post",
@@ -113,7 +114,7 @@ def test_openai_stream(client):
             yield line
 
     mock_stream_response = MagicMock()
-    mock_stream_response.raise_for_status = MagicMock()
+    mock_stream_response.is_error = False
     mock_stream_response.aiter_lines = fake_aiter_lines
     mock_stream_response.__aenter__ = AsyncMock(return_value=mock_stream_response)
     mock_stream_response.__aexit__ = AsyncMock(return_value=False)
@@ -141,9 +142,7 @@ def test_openai_stream(client):
 # ---------------------------------------------------------------------------
 
 def test_anthropic_complete_normalizes_response(client):
-    mock_response = MagicMock()
-    mock_response.json.return_value = ANTHROPIC_RESPONSE
-    mock_response.raise_for_status = MagicMock()
+    mock_response = _ok_response(ANTHROPIC_RESPONSE)
 
     with patch(
         "app.providers.anthropic_provider.httpx.AsyncClient.post",
@@ -166,9 +165,7 @@ def test_anthropic_complete_normalizes_response(client):
 
 
 def test_anthropic_extracts_system_message(client):
-    mock_response = MagicMock()
-    mock_response.json.return_value = ANTHROPIC_RESPONSE
-    mock_response.raise_for_status = MagicMock()
+    mock_response = _ok_response(ANTHROPIC_RESPONSE)
 
     with patch(
         "app.providers.anthropic_provider.httpx.AsyncClient.post",
@@ -193,9 +190,7 @@ def test_anthropic_extracts_system_message(client):
 
 
 def test_anthropic_default_max_tokens(client):
-    mock_response = MagicMock()
-    mock_response.json.return_value = ANTHROPIC_RESPONSE
-    mock_response.raise_for_status = MagicMock()
+    mock_response = _ok_response(ANTHROPIC_RESPONSE)
 
     with patch(
         "app.providers.anthropic_provider.httpx.AsyncClient.post",
@@ -226,7 +221,7 @@ def test_anthropic_stream(client):
             yield line
 
     mock_stream_response = MagicMock()
-    mock_stream_response.raise_for_status = MagicMock()
+    mock_stream_response.is_error = False
     mock_stream_response.aiter_lines = fake_aiter_lines
     mock_stream_response.__aenter__ = AsyncMock(return_value=mock_stream_response)
     mock_stream_response.__aexit__ = AsyncMock(return_value=False)

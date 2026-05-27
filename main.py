@@ -6,6 +6,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.api import router
 from app.rate_limiter import limiter
+from app.upstream import UpstreamError
 
 app = FastAPI(title="LLM Proxy", version="0.1.0")
 
@@ -22,6 +23,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(UpstreamError)
+async def upstream_error_handler(request: Request, exc: UpstreamError) -> JSONResponse:
+    return JSONResponse(
+        status_code=502,
+        content={
+            "error": {
+                "message": f"Upstream provider error ({exc.status_code}): {exc.body[:200]}",
+                "type": "upstream_error",
+                "code": str(exc.status_code),
+            }
+        },
+    )
 
 
 @app.exception_handler(RateLimitExceeded)

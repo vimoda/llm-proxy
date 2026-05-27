@@ -16,6 +16,7 @@ from app.models import (
     Usage,
 )
 from app.providers.base import BaseProvider
+from app.upstream import check_response, error_sse, UpstreamError
 
 BASE_URL = "http://localhost:11434/api"
 
@@ -140,10 +141,7 @@ class OllamaAIProvider(BaseProvider):
                 json=payload,
                 timeout=60.0,
             )
-            response.raise_for_status()
-            # Guardar la respuesta completa en un archivo para depuración
-            # with open("ollama_response.json", "w") as f:
-            #     json.dump(response.json(), f, indent=2)
+            await check_response(response)
 
             return self._normalize(cast(_OllamaResponse, response.json()), model)
 
@@ -153,19 +151,22 @@ class OllamaAIProvider(BaseProvider):
         payload = self._payload(request, model)
         payload["stream"] = True
         async with httpx.AsyncClient() as client:
-            async with client.stream(
-                "POST",
-                f"{BASE_URL}/chat",
-                headers=self._headers(),
-                json=payload,
-                timeout=60.0,
-            ) as response:
-                response.raise_for_status()
-                # Ollama streams NDJSON — each line is a JSON object, not SSE.
-                # We wrap it in SSE format for the client.
-                async for line in response.aiter_lines():
-                    if line:
-                        yield f"data: {line}\n\n"
+            try:
+                async with client.stream(
+                    "POST",
+                    f"{BASE_URL}/chat",
+                    headers=self._headers(),
+                    json=payload,
+                    timeout=60.0,
+                ) as response:
+                    await check_response(response)
+                    # Ollama streams NDJSON — each line is a JSON object, not SSE.
+                    # We wrap it in SSE format for the client.
+                    async for line in response.aiter_lines():
+                        if line:
+                            yield f"data: {line}\n\n"
+            except UpstreamError as e:
+                yield error_sse(e.status_code, str(e), e.body)
 
     async def list_models(self) -> list[ModelInfo]:
         async with httpx.AsyncClient() as client:

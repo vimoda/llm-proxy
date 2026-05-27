@@ -1,7 +1,17 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app.config import settings
 from main import app
+
+
+@pytest.fixture(autouse=True)
+def _no_auth():
+    """Disable API key auth for tests."""
+    saved = settings.api_keys
+    settings.api_keys = ""
+    yield
+    settings.api_keys = saved
 
 
 @pytest.fixture
