@@ -270,7 +270,7 @@ All memories are automatically injected into the system prompt at the start of e
 
 ```json
 {
-  "servers": {
+  "mcpServers": {
     "filesystem": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
@@ -279,7 +279,7 @@ All memories are automatically injected into the system prompt at the start of e
 }
 ```
 
-Each MCP server's tools are exposed as `servername__toolname`. Multiple servers can be listed under `"servers"`.
+Each MCP server's tools are exposed as `servername__toolname`. Multiple servers can be listed under `"mcpServers"`.
 
 ```bash
 # With default mcp.json

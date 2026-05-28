@@ -17,7 +17,7 @@ class MCPManager:
 
     def _load_config(self) -> dict:
         if not self.config_path.exists():
-            return {"servers": {}}
+            return {"mcpServers": {}}
         with open(self.config_path) as f:
             return json.load(f)
 
@@ -29,7 +29,7 @@ class MCPManager:
             return
 
         config = self._load_config()
-        for name, srv in config.get("servers", {}).items():
+        for name, srv in config.get("mcpServers", {}).items():
             try:
                 params = StdioServerParameters(
                     command=srv["command"],
