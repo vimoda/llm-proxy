@@ -2,21 +2,45 @@
   "mcpServers": {
     "filesystem": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "."
+      ]
     },
     "t1envios": {
       "command": "uv",
-      "args": ["--directory", "tu path de shipments", "run", "python", "-m", "t1envios.mcp.server"],
-      "env": {                                                                                                                                                          
-        "T1_CLIENT_ID": "t1envios",                                                                                                                                     
-        "T1_CLIENT_SECRET": "${T1_CLIENT_SECRET}",                                                                                                                            
-        "T1_USERNAME": "${T1_USERNAME}",                                                                                                                                  
+      "args": [
+        "--directory",
+        "tu path de shipments",
+        "run",
+        "python",
+        "-m",
+        "t1envios.mcp.server"
+      ],
+      "env": {
+        "T1_CLIENT_ID": "t1envios",
+        "T1_CLIENT_SECRET": "${T1_CLIENT_SECRET}",
+        "T1_USERNAME": "${T1_USERNAME}",
         "T1_PASSWORD": "${T1_PASSWORD}",
         "T1_ENV": "${T1_ENV}",
         "T1_SHOP_ID": "${T1_SHOP_ID}",
         "T1_COMERCE_ID": "${T1_COMERCE_ID}",
         "T1_LOG_LEVEL": "DEBUG"
-      } 
+      },
+      "web_search": {
+        "command": "uvx",
+        "args": [
+          "--from",
+          "git+https://github.com/<nombre>/web-search-mcp",
+          "web-search-mcp"
+        ],
+        "env": {
+          "WEB_SEARCH_MAX_CHARS": "8000",
+          "WEB_SEARCH_REGION": "us-en",
+          "WEB_SEARCH_TIMEOUT": "20"
+        }
+      }
     }
   }
 }
