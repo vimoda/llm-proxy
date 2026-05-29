@@ -8,7 +8,7 @@
         "."
       ]
     },
-    "t1envios": {
+    "t1shipments": {
       "command": "uv",
       "args": [
         "--directory",
@@ -16,7 +16,7 @@
         "run",
         "python",
         "-m",
-        "t1envios.mcp.server"
+        "t1shipments.mcp.server"
       ],
       "env": {
         "T1_CLIENT_ID": "t1envios",
